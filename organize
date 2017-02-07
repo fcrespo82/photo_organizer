@@ -1,0 +1,73 @@
+#!/home/fxcrespo/python-envs/photo_organizer/bin/python
+"""
+Organize your photos based on exif
+
+usage:
+    organize <origin> <destination>
+    organize -v
+
+options:
+    <origin>            path to organize
+    <destination>       where to put the files
+    -h                  help
+    -v                  Print the version and exit
+""" 
+import datetime, sys, os, errno
+from string import Template
+import piexif
+from docopt import docopt
+
+VERSION="organize v1.0 beta"
+
+FILENAME=Template("${hour}_${minute}_${second}.jpg")
+STRUCTURE=Template("${year}/${month}/${day}/${filename}")
+
+def fullpath(path):
+    return os.path.realpath(os.path.abspath(os.path.expanduser(os.path.expandvars(os.path.normpath(path)))))
+
+def date_from_image(image):
+    exif_dict = piexif.load(image)
+    date = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
+    return datetime.datetime.strptime(str(date), "b'%Y:%m:%d %H:%M:%S'")
+
+def kwargs_from_image(image):
+    date = date_from_image(image)
+    return {'year': date.year, 'month':str(date.month).rjust(2,'0'),'day': str(date.day).rjust(2,'0'), 'hour': str(date.hour).rjust(2,'0'), 'minute': str(date.minute).rjust(2,'0'), 'second': date.second}
+
+def make_dir_from_date(date):
+    pass
+
+if __name__ == '__main__':
+    args = docopt(__doc__, version=VERSION)    
+
+    
+
+    if (args["-v"]):
+        print(VERSION)
+        exit(0)
+
+    fullpath_origin = fullpath(args["<origin>"])
+    fullpath_destination = fullpath(args["<destination>"])
+
+    if (os.path.exists(fullpath_origin)):
+        for root, dirs, files in os.walk(fullpath_origin):
+            files = [file for file in files if 'jpg' in file.lower() and not file.startswith('.')]
+            files = map(lambda file: os.path.join(root,file), files)
+            for file in files:
+                val = STRUCTURE.safe_substitute(kwargs_from_image(file), filename=FILENAME.safe_substitute(kwargs_from_image(file)))
+                print(os.path.join(root,file))
+                print(os.path.join(fullpath_destination, val))
+                print('')
+
+        # exif_dict = piexif.load("IMG_0357.JPG")
+        # date = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
+        # print(datetime.datetime.strptime(str(date), "b'%Y:%m:%d %H:%M:%S'"))
+
+        # for ifd in ("0th", "Exif", "GPS", "1st"):
+        #     print(ifd)
+        #     for tag in exif_dict[ifd]:
+        #         print(piexif.TAGS[ifd][tag]["name"], exif_dict[ifd][tag])
+
+        exit(0)
+    else:
+        exit(errno.ENOENT) # No such file or directory

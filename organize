@@ -1,4 +1,4 @@
-#!/home/fxcrespo/python-envs/photo_organizer/bin/python
+#!./env/bin/python
 """
 Organize your photos based on exif
 
@@ -19,7 +19,9 @@ from docopt import docopt
 
 VERSION="organize v1.0 beta"
 
-FILENAME=Template("${hour}_${minute}_${second}.jpg")
+FILETYPES=['jpg', 'cr2']
+
+FILENAME=Template("${hour}_${minute}_${second}.${extension}")
 STRUCTURE=Template("${year}/${month}/${day}/${filename}")
 
 def fullpath(path):
@@ -51,10 +53,11 @@ if __name__ == '__main__':
 
     if (os.path.exists(fullpath_origin)):
         for root, dirs, files in os.walk(fullpath_origin):
-            files = [file for file in files if 'jpg' in file.lower() and not file.startswith('.')]
+            files = [file for file in files if file.lower().split('.')[-1] in FILETYPES and not file.startswith('.')]
             files = map(lambda file: os.path.join(root,file), files)
             for file in files:
-                val = STRUCTURE.safe_substitute(kwargs_from_image(file), filename=FILENAME.safe_substitute(kwargs_from_image(file)))
+                extension = file.split('.')[-1].lower()
+                val = STRUCTURE.safe_substitute(kwargs_from_image(file), filename=FILENAME.safe_substitute(kwargs_from_image(file), extension=extension))
                 print(os.path.join(root,file))
                 print(os.path.join(fullpath_destination, val))
                 print('')

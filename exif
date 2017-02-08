@@ -1,0 +1,11 @@
+#!./env/bin/python
+import sys
+import piexif
+
+exif_dict = piexif.load(sys.argv[1])
+grep = sys.argv[2]
+
+for ifd in ("0th", "Exif", "GPS", "1st"):
+    for tag in exif_dict[ifd]:
+        if grep.lower() in piexif.TAGS[ifd][tag]["name"].lower():
+            print(piexif.TAGS[ifd][tag]["name"], exif_dict[ifd][tag])

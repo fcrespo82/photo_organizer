@@ -3,5 +3,6 @@
     "files.associations": {
         "organize": "python",
         "exif": "python"
-    }
+    },
+    "python.pythonPath": "${workspaceRoot}/env/bin/python"
 }

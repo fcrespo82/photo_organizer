@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-{
-    "python.pythonPath": "~/python-envs/photo_organizer/bin/python"
-=======
 // Place your settings in this file to overwrite default and user settings.
 {
     "files.associations": {
@@ -13,5 +9,4 @@
         "--disable=C0301",
         "--disable=C0111"
     ]
->>>>>>> e420eff4502b949e9ebedf36f763e435f4acc2d8
 }

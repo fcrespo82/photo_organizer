@@ -3,7 +3,7 @@
 Organize your photos based on exif
 
 usage:
-    organize <origin> <destination>
+    organize [-d] <origin> <destination>
     organize -v
 
 options:
@@ -11,18 +11,22 @@ options:
     <destination>       where to put the files
     -h                  help
     -v                  Print the version and exit
-""" 
-import datetime, sys, os, errno
+    -d                  DEBUG
+"""
+import datetime
+import os
+import errno
+import shutil
 from string import Template
 import piexif
 from docopt import docopt
 
-VERSION="organize v1.0 beta"
+VERSION = "organize v1.0 beta"
 
-FILETYPES=['jpg', 'cr2']
+FILETYPES = ['jpg', 'cr2']
 
-FILENAME=Template("${hour}_${minute}_${second}.${extension}")
-STRUCTURE=Template("${year}/${month}/${day}/${filename}")
+FILENAME = Template("${hour}_${minute}_${second}.${extension}")
+STRUCTURE = Template("${year}/${month}/${day}/${filename}")
 
 def fullpath(path):
     return os.path.realpath(os.path.abspath(os.path.expanduser(os.path.expandvars(os.path.normpath(path)))))
@@ -34,43 +38,39 @@ def date_from_image(image):
 
 def kwargs_from_image(image):
     date = date_from_image(image)
-    return {'year': date.year, 'month':str(date.month).rjust(2,'0'),'day': str(date.day).rjust(2,'0'), 'hour': str(date.hour).rjust(2,'0'), 'minute': str(date.minute).rjust(2,'0'), 'second': date.second}
+    return {'year': date.year, 'month': str(date.month).rjust(2, '0'), 'day': str(date.day).rjust(2, '0'), 'hour': str(date.hour).rjust(2, '0'), 'minute': str(date.minute).rjust(2, '0'), 'second': date.second}
 
 def make_dir_from_date(date):
     pass
 
 if __name__ == '__main__':
-    args = docopt(__doc__, version=VERSION)    
+    ARGS = docopt(__doc__, version=VERSION)
 
-    
-
-    if (args["-v"]):
+    if ARGS["-v"]:
         print(VERSION)
         exit(0)
 
-    fullpath_origin = fullpath(args["<origin>"])
-    fullpath_destination = fullpath(args["<destination>"])
+    FULLPATH_ORIGIN = fullpath(ARGS["<origin>"])
+    FULLPATH_DESTINATION = fullpath(ARGS["<destination>"])
 
-    if (os.path.exists(fullpath_origin)):
-        for root, dirs, files in os.walk(fullpath_origin):
+    if os.path.exists(FULLPATH_ORIGIN):
+        for root, dirs, files in os.walk(FULLPATH_ORIGIN):
             files = [file for file in files if file.lower().split('.')[-1] in FILETYPES and not file.startswith('.')]
-            files = map(lambda file: os.path.join(root,file), files)
+            files = map(lambda file: os.path.join(root, file), files)
             for file in files:
                 extension = file.split('.')[-1].lower()
                 val = STRUCTURE.safe_substitute(kwargs_from_image(file), filename=FILENAME.safe_substitute(kwargs_from_image(file), extension=extension))
-                print(os.path.join(root,file))
-                print(os.path.join(fullpath_destination, val))
-                print('')
+                src = os.path.join(root, file)
+                dst = os.path.join(FULLPATH_DESTINATION, val)
 
-        # exif_dict = piexif.load("IMG_0357.JPG")
-        # date = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
-        # print(datetime.datetime.strptime(str(date), "b'%Y:%m:%d %H:%M:%S'"))
+                dest = os.path.dirname(dst)
+                if not os.path.exists(dest):
+                    os.makedirs(dest)
 
-        # for ifd in ("0th", "Exif", "GPS", "1st"):
-        #     print(ifd)
-        #     for tag in exif_dict[ifd]:
-        #         print(piexif.TAGS[ifd][tag]["name"], exif_dict[ifd][tag])
+                print(src)
+                print(dst)
 
+                #shutil.move(src, dst)
         exit(0)
     else:
         exit(errno.ENOENT) # No such file or directory

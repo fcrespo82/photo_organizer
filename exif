@@ -1,11 +1,28 @@
 #!./env/bin/python
-import sys
+"""
+View exif from File
+
+usage:
+    exif <file> [-f <grep>]
+    exif -h
+
+options:
+    <file>                      File to read exif from
+    -f <grep>, --filter <grep>  Exif tag to display
+"""
 import piexif
+from docopt import docopt
 
-exif_dict = piexif.load(sys.argv[1])
-grep = sys.argv[2]
+if __name__ == '__main__':
+    ARGS = docopt(__doc__)
 
-for ifd in ("0th", "Exif", "GPS", "1st"):
-    for tag in exif_dict[ifd]:
-        if grep.lower() in piexif.TAGS[ifd][tag]["name"].lower():
-            print(piexif.TAGS[ifd][tag]["name"], exif_dict[ifd][tag])
+    EXIF_DICT = piexif.load(ARGS["<file>"])
+    GREP = ARGS["--filter"]
+
+    for ifd in ("0th", "Exif", "GPS", "1st"):
+        for tag in EXIF_DICT[ifd]:
+            if ARGS["--filter"]:
+                if GREP.lower() in piexif.TAGS[ifd][tag]["name"].lower():
+                    print(piexif.TAGS[ifd][tag]["name"], EXIF_DICT[ifd][tag])
+            else:
+                print(piexif.TAGS[ifd][tag]["name"], EXIF_DICT[ifd][tag])

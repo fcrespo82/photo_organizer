@@ -5,7 +5,7 @@
             "name": "Python",
             "type": "python",
             "request": "launch",
-            "stopOnEntry": false,
+            "stopOnEntry": true,
             "pythonPath": "${config.python.pythonPath}",
             "program": "${file}",
             "cwd": "${workspaceRoot}",
@@ -15,15 +15,15 @@
                 "RedirectOutput"
             ],
             "args": [
-                ".",
-                "/tmp"
+                "-i",
+                "teste"
             ]
         },
         {
             "name": "Python Module",
             "type": "python",
             "request": "launch",
-            "stopOnEntry": true,
+            "stopOnEntry": false,
             "pythonPath": "${config.python.pythonPath}",
             "module": "module.name",
             "cwd": "${workspaceRoot}",
@@ -51,7 +51,7 @@
             "name": "External Terminal/Console",
             "type": "python",
             "request": "launch",
-            "stopOnEntry": true,
+            "stopOnEntry": false,
             "pythonPath": "${config.python.pythonPath}",
             "program": "${file}",
             "cwd": "null",

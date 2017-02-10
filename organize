@@ -3,30 +3,39 @@
 Organize your photos based on exif
 
 usage:
-    organize [-d] <origin> <destination>
-    organize -v
+    organize [-ddr] (-i <origin> | <origin> <destination>) [--exec] [--action <action>] [--no-dupes] [--file-types <types>]
+    organize -v | -h
 
 options:
-    <origin>            path to organize
-    <destination>       where to put the files
-    -h                  help
-    -v                  Print the version and exit
-    -d                  DEBUG
+    -d, -dd               Debug messages
+    -r                    Recursive
+    -i                    Organize in place (set the destination equals to origin)
+    <origin>              Path to organize
+    <destination>         Where to put the files
+    --exec                Really execute the command, otherwise dry-run
+    --no-dupes            Do not copy/move if file seen the same
+    --action <action>     Action to perform copy or move [default: copy]
+    --file-types <types>  Override filetypes to treat [default: jpg,cr2]
+
+    -v, --version         Print program version
+    -h, --help            Help
 """
 import datetime
 import os
 import errno
 import shutil
+import re
+import filecmp
 from string import Template
 import piexif
 from docopt import docopt
 
 VERSION = "organize v1.0 beta"
 
-FILETYPES = ['jpg', 'cr2']
-
 FILENAME = Template("${hour}_${minute}_${second}.${extension}")
 STRUCTURE = Template("${year}/${month}/${day}/${filename}")
+
+SAME_FILE = "[SAME_FILE]"
 
 def fullpath(path):
     return os.path.realpath(os.path.abspath(os.path.expanduser(os.path.expandvars(os.path.normpath(path)))))
@@ -38,22 +47,66 @@ def date_from_image(image):
 
 def kwargs_from_image(image):
     date = date_from_image(image)
-    return {'year': date.year, 'month': str(date.month).rjust(2, '0'), 'day': str(date.day).rjust(2, '0'), 'hour': str(date.hour).rjust(2, '0'), 'minute': str(date.minute).rjust(2, '0'), 'second': date.second}
+    return {'year': date.year, 'month': str(date.month).rjust(2, '0'), 'day': str(date.day).rjust(2, '0'), 'hour': str(date.hour).rjust(2, '0'), 'minute': str(date.minute).rjust(2, '0'), 'second': str(date.second).rjust(2, '0')}
 
-def make_dir_from_date(date):
-    pass
+def log_debug(message):
+    if ARGS["-d"] > 0 and ARGS["--exec"]:
+        print(message)
+
+def log_debug_complete(message):
+    if ARGS["-d"] > 1:
+        print(message)
+
+def log_dry_run(message):
+    if not ARGS["--exec"]:
+        print(message)
+
+def recursive_name(origin, filename, _try=0):
+    new_name = Template("${fullpathandname}${disambiguation}.${extension}")
+    if not os.path.exists(filename):
+        return filename
+    else:
+        log_debug_complete(os.stat(origin))
+        log_debug_complete(os.stat(filename))
+        if ARGS["--no-dupes"]:
+            if filecmp.cmp(origin, filename, shallow=False):
+                return SAME_FILE + " " + dst
+        if _try > 0:
+            disambiguation = "-" + str(_try).rjust(2, '0')
+            match = re.match(r'(?P<fullpathandname>.*?)(?P<disambiguation>-.*)?\.(?P<extension>.*)', filename)
+            if match:
+                values = match.groupdict()
+                values['disambiguation'] = disambiguation
+                _filename = new_name.safe_substitute(values)
+                #_filename = new_name.safe_substitute(fullpathandname=filename.split(".")[0], disambiguation=disambiguation, extension=filename.split(".")[1])
+        else:
+            _filename = filename
+        return recursive_name(origin, _filename, _try+1)
 
 if __name__ == '__main__':
     ARGS = docopt(__doc__, version=VERSION)
+    log_debug_complete(ARGS)
 
-    if ARGS["-v"]:
+    FILETYPES = ARGS["--file-types"].split(",")
+
+    if ARGS["--action"] not in ["move", "copy"]:
+        print(Template("Error, '${action}' is not a valid action").safe_substitute(action=ARGS["--action"]))
+        exit(errno.EBADEXEC)
+
+    if ARGS["--version"]:
         print(VERSION)
         exit(0)
 
     FULLPATH_ORIGIN = fullpath(ARGS["<origin>"])
-    FULLPATH_DESTINATION = fullpath(ARGS["<destination>"])
+    if ARGS["-i"]:
+        FULLPATH_DESTINATION = fullpath(ARGS["<origin>"])
+    else:
+        FULLPATH_DESTINATION = fullpath(ARGS["<destination>"])
 
     if os.path.exists(FULLPATH_ORIGIN):
+        log_dry_run('Processing files')
+        if ARGS["-r"]:
+            log_dry_run('recursively')
         for root, dirs, files in os.walk(FULLPATH_ORIGIN):
             files = [file for file in files if file.lower().split('.')[-1] in FILETYPES and not file.startswith('.')]
             files = map(lambda file: os.path.join(root, file), files)
@@ -67,10 +120,32 @@ if __name__ == '__main__':
                 if not os.path.exists(dest):
                     os.makedirs(dest)
 
-                print(src)
-                print(dst)
+                log_debug(src)
+                dst = recursive_name(src, dst)
+                log_debug(dst)
 
-                #shutil.move(src, dst)
+                if SAME_FILE not in dst:
+                    if ARGS["--action"] == 'copy':
+                        log_debug("Copying file")
+                        log_dry_run("Copying file to destination")
+                        log_dry_run(dst)
+                        if ARGS["--exec"]:
+                            shutil.copy(src, dst)
+                    elif ARGS["--action"] == 'move':
+                        log_debug("Moving file")
+                        log_dry_run("Moving file to destination")
+                        log_dry_run(dst)
+                        if ARGS["--exec"]:
+                            shutil.copy(src, dst)
+                else:
+                    log_debug("Origin and destination are the same, not copying/moving")
+                    log_dry_run("Origin and destination are the same, not copying/moving")
+                log_debug("")
+                log_dry_run("")
+            if not ARGS["-r"]:
+                break
+
+        log_dry_run("Finish")
         exit(0)
     else:
         exit(errno.ENOENT) # No such file or directory

@@ -136,7 +136,11 @@ if __name__ == '__main__':
                         log_dry_run("Moving file to destination")
                         log_dry_run(dst)
                         if ARGS["--exec"]:
-                            shutil.copy(src, dst)
+                            try:
+                                shutil.move(src, dst)
+                            except:
+                                print('Cant move file, skiping')
+
                 else:
                     log_debug("Origin and destination are the same, not copying/moving")
                     log_dry_run("Origin and destination are the same, not copying/moving")

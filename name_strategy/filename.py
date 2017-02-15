@@ -3,7 +3,9 @@ import re
 
 MODULE_NAME = "FILENAME"
 
-DATES_FORMAT = [r".*(?P<day>\d{2}).(?P<month>\d{2}).(?P<year>\d{4}).(?P<hour>\d{2}).(?P<minute>\d{2}).(?P<second>\d{2}).*"]
+DATES_FORMAT = [r".*(?P<day>\d{2}).(?P<month>\d{2}).(?P<year>\d{4}).(?P<hour>\d{2}).(?P<minute>\d{2}).(?P<second>\d{2}).*",
+                r".*(?P<year>\d{4}).(?P<month>\d{2}).(?P<day>\d{2}).(?P<hour>\d{2}).(?P<minute>\d{2}).(?P<second>\d{2}).*"]
+
 
 class Dynamic:
     def __init__(self, **kwds):

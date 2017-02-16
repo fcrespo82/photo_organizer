@@ -1,0 +1,37 @@
+#!./env/bin/python
+"""
+View metadata from File
+
+usage:
+    metadata <file> [-f <grep>]
+    metadata -h
+
+options:
+    <file>                      File to read metadata from
+    -f <grep>, --filter <grep>  Exif tag to display
+"""
+from hachoir.parser import createParser
+from hachoir.metadata import extractMetadata
+from hachoir.core.log import config
+from docopt import docopt
+
+if __name__ == '__main__':
+    ARGS = docopt(__doc__)
+
+    config.quiet = True
+
+    GREP = ARGS["--filter"]
+
+    PARSER = createParser(ARGS["<file>"])
+    METADATA = extractMetadata(PARSER, quality=1)
+
+    for metadata in METADATA:
+        if metadata.values:
+            for value in metadata.values:
+                if ARGS["--filter"]:
+                    if GREP.lower() in metadata.key.lower():
+                        print(metadata.key, end=": ")
+                        print(value.value)
+                else:
+                    print(metadata.key, end=": ")
+                    print(value.value)

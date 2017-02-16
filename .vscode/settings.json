@@ -2,7 +2,8 @@
 {
     "files.associations": {
         "organize": "python",
-        "exif": "python"
+        "exif": "python",
+        "metadata": "python"
     },
     "python.pythonPath": "${workspaceRoot}/env/bin/python",
     "python.linting.pylintArgs": [

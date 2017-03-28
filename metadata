@@ -18,7 +18,7 @@ from docopt import docopt
 if __name__ == '__main__':
     ARGS = docopt(__doc__)
 
-    config.quiet = True
+    config.debug = False
 
     GREP = ARGS["--filter"]
 

@@ -92,6 +92,11 @@ def recursive_name(origin, filename, _try=0):
             _filename = filename
         return recursive_name(origin, _filename, _try+1)
 
+def join_with_generator(rroot):
+    def funcname(ffile):
+        return os.path.join(rroot, ffile)
+    return funcname
+
 if __name__ == '__main__':
     ARGS = docopt(__doc__, version=VERSION)
     log_debug_complete(ARGS)
@@ -118,7 +123,8 @@ if __name__ == '__main__':
             log_dry_run('recursively')
         for root, dirs, files in os.walk(FULLPATH_ORIGIN):
             files = [file for file in files if file.lower().split('.')[-1] in FILETYPES and not file.startswith('.')]
-            files = map(lambda file: os.path.join(root, file), files)
+            join_with_root = join_with_generator(root)
+            files = map(join_with_root, files)
             for file in files:
                 extension = file.split('.')[-1].lower()
                 args = kwargs_from_image(file)
